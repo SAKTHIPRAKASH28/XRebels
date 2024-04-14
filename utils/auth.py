@@ -24,8 +24,7 @@ router = APIRouter(tags=["Authentication"], prefix="/auth")
 firebase = pyrebase.initialize_app(FIREBASE_CONFIG)
 
 
-@router.get("/")
-async def verifyToken(token: str):
+def verifyToken(token: str):
     try:
         user = auth.verify_id_token(token)
         return user["uid"]
