@@ -3,7 +3,7 @@ import os
 import google.generativeai as genai
 from fastapi import APIRouter, status, Query
 from fastapi.responses import JSONResponse
-from database.models import Consumption
+from utils.models import Consumption
 from typing import Optional
 load_dotenv()
 
