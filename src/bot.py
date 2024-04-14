@@ -1,10 +1,13 @@
 from dotenv import load_dotenv
 import os
+from typing import Optional
 import google.generativeai as genai
 from fastapi import APIRouter, status, Query
 from fastapi.responses import JSONResponse
+from fastapi.requests import Request
+from utils.auth import verifyToken
 from utils.models import Consumption
-from typing import Optional
+from src.cache import get_from_cache, set_to_cache
 load_dotenv()
 
 
@@ -15,23 +18,38 @@ def getModel():
 
 
 model = getModel()
-chat = model.start_chat(history=[])
+
 router = APIRouter(tags=["Bot"])
 
 
-@router.post("/suggestion", status_code=status.HTTP_200_OK)
-async def get_suggestion(prev_day: Optional[Consumption] = None, today: Optional[Consumption] = None, prompt: Optional[str] = Query(...)) -> str:
-    if not chat.history:
-        if not (prev_day and today):
-            return JSONResponse(content="Consumption data missing!", status_code=404)
-        else:
-            prompt = f"My previous day consumption was {
-                prev_day} and todays was  {today}. Give me some insights on my energy savings if any,or suggest any methods to save more."
-            response = chat.send_message(prompt, stream=True)
+async def get_Suggestion(uid, curr_day: Consumption, prev_day: Optional[Consumption] = None,) -> str:
+    chat = model.start_chat(history=get_from_cache(uid))
 
-    else:
-        response = chat.send_message(prompt)
+    prompt = f"My yesterday electricty consumption was {
+        prev_day if prev_day else "nothing as this is my firstday"} and my today consumption was {curr_day}.Give me a remark and suggestion on this."
+    response = chat.send_message(prompt)
     res = ""
     for chunk in response:
         res += chunk.text
+    set_to_cache(uid, [{"role": "user", "parts": prompt}, {
+        "role": "model", "parts": res}])
     return res
+
+
+@router.post("/chat", status_code=status.HTTP_200_OK)
+async def chat(request: Request) -> str:
+    try:
+        uid = verifyToken(request)
+        prompt = await request.json()
+        prompt = prompt["prompt"]
+        chat = model.start_chat(history=get_from_cache(uid))
+        response = chat.send_message(prompt)
+        res = ""
+        for chunk in response:
+            res += chunk.text
+        set_to_cache(uid, [{"role": "user", "parts": prompt}, {
+                     "role": "model", "parts": res}])
+        return res
+    except Exception as e:
+
+        return JSONResponse(content=str(e))

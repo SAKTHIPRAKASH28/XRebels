@@ -4,3 +4,4 @@ sqlalchemy
 psycopg2
 google-generativeai
 firebase_admin
+python-multipart

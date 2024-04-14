@@ -4,10 +4,10 @@ from .schema import Base
 
 
 dbSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base.metadata.create_all(bind=engine)
 
 
 def get_db():
+    Base.metadata.create_all(bind=engine)
     db = dbSession()
     try:
         yield db

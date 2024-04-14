@@ -10,11 +10,9 @@ class Consumption(BaseModel):
 
 
 class UserModel(BaseModel):
-    email: str
-    password: str
+    email: str = Field(...)
+    password: str = Field(...)
 
-    class Config:
-        json_schema_extra = {"example": {
-            "email": "user@gmail.com",
-            "password": "passw0rd"}
-        }
+
+class UserSignUp(UserModel):
+    username: str = Field(...)
